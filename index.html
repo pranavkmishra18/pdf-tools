@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Tools — Privacy-First PDF Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- PDF.js, PDF-Lib & jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(59, 130, 246, 0.5);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+      --emerald: #10b981;
+      --danger: #ef4444;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ambient glow background */
+    .glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(140px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.18;
+    }
+    .glow-blue {
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #3b82f6;
+    }
+    .glow-purple {
+      bottom: -100px;
+      right: 10%;
+      background: #8b5cf6;
+      opacity: 0.12;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 13, 22, 0.75);
+      backdrop-filter: blur(20px);
+    }
+
+    .nav {
+      max-width: 860px;
+      margin: auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 19px;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #34d399;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      max-width: 780px;
+      width: 100%;
+      margin: 48px auto;
+      padding: 0 20px;
+      flex: 1;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 5.5vw, 46px);
+      font-weight: 800;
+      letter-spacing: -1.2px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      background: linear-gradient(180deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15.5px;
+      max-width: 520px;
+      margin: auto;
+    }
+
+    /* Modern Segmented Navigation Tabs */
+    .tabs-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .tabs {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      gap: 6px;
+      backdrop-filter: blur(12px);
+    }
+
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: rgba(37, 99, 235, 0.25);
+      border-color: rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+    }
+
+    /* Glass Studio Card */
+    .studio-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+
+    .studio-card.active {
+      display: block;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+    }
+
+    .card-title h2 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: #fff;
+    }
+
+    .card-title p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    /* Interactive Dropzone */
+    .dropzone {
+      border: 2px dashed rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--radius);
+      padding: 44px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.06);
+      transform: scale(0.998);
+    }
+
+    .dropzone-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      color: var(--primary);
+      transition: all 0.2s;
+    }
+
+    .dropzone:hover .dropzone-icon-box {
+      background: rgba(59, 130, 246, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .dropzone strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+
+    .dropzone span {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Selected File Pills */
+    .file-queue {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .file-pill {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .file-pill:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .file-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .file-meta-name {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 320px;
+    }
+
+    .file-meta-size {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    .file-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .action-btn.trash:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    /* Input Fields */
+    .input-field-group {
+      margin-top: 22px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .input-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-element {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 13px 48px 13px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-element:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    .input-element::placeholder {
+      color: #64748b;
+    }
+
+    .eye-btn {
+      position: absolute;
+      right: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: color 0.15s;
+    }
+
+    .eye-btn:hover {
+      color: #fff;
+    }
+
+    /* Primary Launch Button */
+    .btn-action {
+      width: 100%;
+      background: var(--primary-gradient);
+      border: none;
+      border-radius: 14px;
+      padding: 15px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 26px;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(37, 99, 235, 0.55);
+    }
+
+    .btn-action:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Privacy Banner */
+    .privacy-card {
+      margin-top: 32px;
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    .privacy-card strong {
+      color: #34d399;
+    }
+
+    footer {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 24px;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* Toast HUD */
+    .toast-hud {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      padding: 12px 20px;
+      background: #1e293b;
+      color: #fff;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13.5px;
+      font-weight: 500;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast-hud.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-hud.success {
+      background: #064e3b;
+      border-color: rgba(52, 211, 153, 0.3);
+      color: #a7f3d0;
+    }
+
+    .toast-hud.error {
+      background: #7f1d1d;
+      border-color: rgba(248, 113, 113, 0.3);
+      color: #fecaca;
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow glow-blue"></div>
+  <div class="glow glow-purple"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="nav">
+      <a href="#" class="brand">
+        <div class="brand-icon">
+          <i data-lucide="layers" style="width:20px; height:20px;"></i>
+        </div>
+        <span>PDF Tools</span>
+      </a>
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        <span>100% In-Browser Execution</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <div class="hero">
+      <h1>Your Documents. Zero Compromise.</h1>
+      <p>Studio-quality PDF utilities operating strictly in local browser memory. Files never touch any remote server.</p>
+    </div>
+
+    <!-- Switcher Tabs -->
+    <div class="tabs-wrapper">
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" id="tab-merge" role="tab" type="button">
+          <i data-lucide="combine" style="width:16px; height:16px;"></i>
+          Merge PDFs
+        </button>
+        <button class="tab-btn" id="tab-unlock" role="tab" type="button">
+          <i data-lucide="unlock" style="width:16px; height:16px;"></i>
+          Unlock PDF
+        </button>
+        <button class="tab-btn" id="tab-lock" role="tab" type="button">
+          <i data-lucide="lock" style="width:16px; height:16px;"></i>
+          Lock PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- MERGE STUDIO -->
+    <section class="studio-card active" id="section-merge" role="tabpanel">
+      <div class="card-header">
+        <div class="card-icon">
+          <i data-lucide="combine" style="width:22px; height:22px;"></i>
+        </div>
+        <div class="card-title">
+          <h2>Merge PDF Files</h2>
+          <p>Join multiple documents together in your exact desired order.</p>
+        </div>
+      </div>
+
+      <div class="dropzone" id="merge-dropzone">
+        <div class="dropzone-icon-box">
+          <i data-lucide="upload-cloud" style="width:24px; height:24px;"></i>
+        </div>
+        <strong>Choose PDF documents or drag them here</strong>
+        <span>Select 2 or more PDFs to combine</span>
+        <input type="file" id="merge-file-input" accept="application/pdf,.pdf" multiple style="display:none;">
+      </div>
+
+      <div class="file-queue" id="merge-queue"></div>
+
+      <button class="btn-action" id="merge-btn" disabled>
+        <i data-lucide="combine" style="width:18px; height:18px;"></i>
+        <span>Merge & Download</span>
+      </button>
+    </section>
+
+    <!-- UNLOCK STUDIO -->
+    <section class="studio-card" id="section-unlock" role="tabpanel">
+      <div class="card-header">
+        <div class="card-icon">
+          <i data-lucide="unlock" style="width:22px; height:22px;"></i>
+        </div>
+        <div class="card-title">
+          <h2>Unlock & Strip Password</h2>
+          <p>Remove passwords and decrypt PDF files into standard, password-free documents.</p>
+        </div>
+      </div>
+
+      <div class="dropzone" id="unlock-dropzone">
+        <div class="dropzone-icon-box">
+          <i data-lucide="file-key-2" style="width:24px; height:24px;"></i>
+        </div>
+        <strong id="unlock-drop-title">Select encrypted PDF file</strong>
+        <span id="unlock-drop-sub">Drag & drop or click anywhere in this zone</span>
+        <input type="file" id="unlock-file-input" accept="application/pdf,.pdf" style="display:none;">
+      </div>
+
+      <div class="input-field-group">
+        <label class="input-label" for="unlock-password">Document Password</label>
+        <div class="input-box">
+          <input type="password" id="unlock-password" class="input-element" placeholder="Enter PDF password to decrypt..." autocomplete="off">
+          <button class="eye-btn" type="button" id="toggle-unlock-eye">
+            <i data-lucide="eye" id="unlock-eye-icon" style="width:18px; height:18px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-action" id="unlock-btn" disabled>
+        <i data-lucide="unlock" style="width:18px; height:18px;"></i>
+        <span>Decrypt & Save Document</span>
+      </button>
+    </section>
+
+    <!-- LOCK STUDIO -->
+    <section class="studio-card" id="section-lock" role="tabpanel">
+      <div class="card-header">
+        <div class="card-icon">
+          <i data-lucide="lock" style="width:22px; height:22px;"></i>
+        </div>
+        <div class="card-title">
+          <h2>Lock & Encrypt PDF</h2>
+          <p>Protect your sensitive documents with a custom password.</p>
+        </div>
+      </div>
+
+      <div class="dropzone" id="lock-dropzone">
+        <div class="dropzone-icon-box">
+          <i data-lucide="file-lock-2" style="width:24px; height:24px;"></i>
+        </div>
+        <strong id="lock-drop-title">Select PDF to protect</strong>
+        <span id="lock-drop-sub">Drag & drop or click anywhere in this zone</span>
+        <input type="file" id="lock-file-input" accept="application/pdf,.pdf" style="display:none;">
+      </div>
+
+      <div class="input-field-group">
+        <label class="input-label" for="lock-password">Set Document Password</label>
+        <div class="input-box">
+          <input type="password" id="lock-password" class="input-element" placeholder="Choose a password for encryption..." autocomplete="off">
+          <button class="eye-btn" type="button" id="toggle-lock-eye">
+            <i data-lucide="eye" id="lock-eye-icon" style="width:18px; height:18px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-action" id="lock-btn" disabled>
+        <i data-lucide="lock" style="width:18px; height:18px;"></i>
+        <span>Encrypt & Download PDF</span>
+      </button>
+    </section>
+
+    <!-- Privacy Banner -->
+    <div class="privacy-card">
+      <i data-lucide="shield-check" style="width:22px; height:22px; color:#34d399; flex-shrink:0; margin-top:2px;"></i>
+      <div>
+        <strong>End-to-End Local Security:</strong> Your files and passwords remain strictly on your computer. Memory buffers are parsed in-browser via WebAssembly, guaranteeing total privacy from unauthorized access.
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    PDF Tools &bull; Privacy-first client-side document processing
+  </footer>
+
+  <div id="toast" class="toast-hud"></div>
+
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+
+    // Helper: Toast notifications
+    let toastTimeout;
+    function showToast(message, type = 'normal') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast-hud show ${type}`;
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.className = 'toast-hud';
+      }, 3500);
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / 1048576).toFixed(2) + " MB";
+    }
+
+    function triggerDownload(blobOrBytes, filename) {
+      const blob = blobOrBytes instanceof Blob ? blobOrBytes : new Blob([blobOrBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    /* ==========================================================
+       TAB CONTROLLER
+    ========================================================== */
+    const tabs = {
+      merge: { btn: document.getElementById('tab-merge'), section: document.getElementById('section-merge') },
+      unlock: { btn: document.getElementById('tab-unlock'), section: document.getElementById('section-unlock') },
+      lock: { btn: document.getElementById('tab-lock'), section: document.getElementById('section-lock') }
+    };
+
+    function activateTab(activeKey) {
+      Object.keys(tabs).forEach(key => {
+        const isCurrent = key === activeKey;
+        tabs[key].btn.classList.toggle('active', isCurrent);
+        tabs[key].section.classList.toggle('active', isCurrent);
+      });
+      lucide.createIcons();
+    }
+
+    tabs.merge.btn.addEventListener('click', () => activateTab('merge'));
+    tabs.unlock.btn.addEventListener('click', () => activateTab('unlock'));
+    tabs.lock.btn.addEventListener('click', () => activateTab('lock'));
+
+    /* Password visibility toggles */
+    function setupPassToggle(btnId, inputId, iconId) {
+      document.getElementById(btnId).addEventListener('click', () => {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+        lucide.createIcons();
+      });
+    }
+    setupPassToggle('toggle-unlock-eye', 'unlock-password', 'unlock-eye-icon');
+    setupPassToggle('toggle-lock-eye', 'lock-password', 'lock-eye-icon');
+
+    /* ==========================================================
+       DROPZONE HELPER
+    ========================================================== */
+    function attachDropzone(dropzoneEl, inputEl, onFiles) {
+      dropzoneEl.addEventListener('click', () => inputEl.click());
+
+      ['dragenter', 'dragover'].forEach(name => {
+        dropzoneEl.addEventListener(name, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzoneEl.classList.add('dragover');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(name => {
+        dropzoneEl.addEventListener(name, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzoneEl.classList.remove('dragover');
+        });
+      });
+
+      dropzoneEl.addEventListener('drop', (e) => {
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length) onFiles(files);
+      });
+
+      inputEl.addEventListener('change', () => {
+        if (inputEl.files.length) {
+          onFiles(Array.from(inputEl.files));
+          inputEl.value = '';
+        }
+      });
+    }
+
+    /* ==========================================================
+       MERGE LOGIC
+    ========================================================== */
+    let mergeList = [];
+    const mergeInput = document.getElementById('merge-file-input');
+    const mergeDropzone = document.getElementById('merge-dropzone');
+    const mergeQueue = document.getElementById('merge-queue');
+    const mergeBtn = document.getElementById('merge-btn');
+
+    attachDropzone(mergeDropzone, mergeInput, (files) => {
+      const valid = files.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+      if (valid.length !== files.length) showToast('Skipped non-PDF files', 'error');
+      mergeList = mergeList.concat(valid);
+      renderMergeQueue();
+    });
+
+    function renderMergeQueue() {
+      mergeQueue.innerHTML = '';
+      mergeList.forEach((file, idx) => {
+        const pill = document.createElement('div');
+        pill.className = 'file-pill';
+        pill.innerHTML = `
+          <div class="file-left">
+            <i data-lucide="file" style="width:16px; height:16px; color:#3b82f6;"></i>
+            <span class="file-meta-name" title="${file.name}">\${file.name}</span>
+            <span class="file-meta-size">\${formatBytes(file.size)}</span>
+          </div>
+          <div class="file-actions">
+            <button class="action-btn" onclick="shiftFile(\${idx}, -1)" title="Move Up" \${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>
+              <i data-lucide="chevron-up" style="width:16px; height:16px;"></i>
+            </button>
+            <button class="action-btn" onclick="shiftFile(\${idx}, 1)" title="Move Down" \${idx === mergeList.length - 1 ? 'disabled style="opacity:0.3"' : ''}>
+              <i data-lucide="chevron-down" style="width:16px; height:16px;"></i>
+            </button>
+            <button class="action-btn trash" onclick="removeMergeFile(\${idx})" title="Remove">
+              <i data-lucide="trash-2" style="width:15px; height:15px;"></i>
+            </button>
+          </div>
+        `;
+        mergeQueue.appendChild(pill);
+      });
+
+      mergeBtn.disabled = mergeList.length < 2;
+      lucide.createIcons();
+    }
+
+    window.shiftFile = function(idx, direction) {
+      const target = idx + direction;
+      if (target < 0 || target >= mergeList.length) return;
+      const [item] = mergeList.splice(idx, 1);
+      mergeList.splice(target, 0, item);
+      renderMergeQueue();
+    };
+
+    window.removeMergeFile = function(idx) {
+      mergeList.splice(idx, 1);
+      renderMergeQueue();
+    };
+
+    mergeBtn.addEventListener('click', async () => {
+      if (mergeList.length < 2) return;
+      mergeBtn.disabled = true;
+      mergeBtn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:18px; height:18px;"></i><span>Combining Documents...</span>`;
+      lucide.createIcons();
+
+      try {
+        const mergedDoc = await PDFLib.PDFDocument.create();
+        for (const f of mergeList) {
+          const buffer = await f.arrayBuffer();
+          const doc = await PDFLib.PDFDocument.load(buffer, { ignoreEncryption: true });
+          const pages = await mergedDoc.copyPages(doc, doc.getPageIndices());
+          pages.forEach(p => mergedDoc.addPage(p));
+        }
+
+        const outBytes = await mergedDoc.save();
+        triggerDownload(outBytes, 'merged_document.pdf');
+        showToast('PDF files merged successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Error merging documents. Ensure they are not locked.', 'error');
+      } finally {
+        mergeBtn.disabled = mergeList.length < 2;
+        mergeBtn.innerHTML = `<i data-lucide="combine" style="width:18px; height:18px;"></i><span>Merge & Download</span>`;
+        lucide.createIcons();
+      }
+    });
+
+    /* ==========================================================
+       UNLOCK LOGIC
+    ========================================================== */
+    let unlockDoc = null;
+    const unlockInput = document.getElementById('unlock-file-input');
+    const unlockDropzone = document.getElementById('unlock-dropzone');
+    const unlockTitle = document.getElementById('unlock-drop-title');
+    const unlockSub = document.getElementById('unlock-drop-sub');
+    const unlockPass = document.getElementById('unlock-password');
+    const unlockBtn = document.getElementById('unlock-btn');
+
+    attachDropzone(unlockDropzone, unlockInput, (files) => {
+      const file = files[0];
+      if (!file || (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf')) {
+        showToast('Please select a valid PDF file.', 'error');
+        return;
+      }
+      unlockDoc = file;
+      unlockTitle.textContent = file.name;
+      unlockSub.textContent = `${formatBytes(file.size)} — Click to replace file`;
+      unlockBtn.disabled = false;
+    });
+
+    unlockBtn.addEventListener('click', async () => {
+      if (!unlockDoc) return;
+      const password = unlockPass.value;
+      unlockBtn.disabled = true;
+      unlockBtn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:18px; height:18px;"></i><span>Decrypting Document...</span>`;
+      lucide.createIcons();
+
+      try {
+        const buffer = await unlockDoc.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({
+          data: new Uint8Array(buffer),
+          password: password
+        });
+
+        const pdf = await loadingTask.promise;
+        const totalPages = pdf.numPages;
+        const newPdf = await PDFLib.PDFDocument.create();
+
+        for (let i = 1; i <= totalPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 });
+
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+          const imgUrl = canvas.toDataURL('image/jpeg', 0.95);
+          const embedded = await newPdf.embedJpg(imgUrl);
+
+          const newPage = newPdf.addPage([viewport.width / 2, viewport.height / 2]);
+          newPage.drawImage(embedded, {
+            x: 0,
+            y: 0,
+            width: viewport.width / 2,
+            height: viewport.height / 2
+          });
+        }
+
+        const outBytes = await newPdf.save();
+        const base = unlockDoc.name.replace(/\.pdf$/i, '');
+        triggerDownload(outBytes, `${base}_unlocked.pdf`);
+        showToast('Password stripped successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        if (err.name === 'PasswordException') {
+          showToast('Incorrect password. Please verify and try again.', 'error');
+        } else {
+          showToast('Failed to decrypt. Verify file integrity and password.', 'error');
+        }
+      } finally {
+        unlockBtn.disabled = !unlockDoc;
+        unlockBtn.innerHTML = `<i data-lucide="unlock" style="width:18px; height:18px;"></i><span>Decrypt & Save Document</span>`;
+        lucide.createIcons();
+      }
+    });
+
+    /* ==========================================================
+       LOCK LOGIC
+    ========================================================== */
+    let lockDoc = null;
+    const lockInput = document.getElementById('lock-file-input');
+    const lockDropzone = document.getElementById('lock-dropzone');
+    const lockTitle = document.getElementById('lock-drop-title');
+    const lockSub = document.getElementById('lock-drop-sub');
+    const lockPass = document.getElementById('lock-password');
+    const lockBtn = document.getElementById('lock-btn');
+
+    attachDropzone(lockDropzone, lockInput, (files) => {
+      const file = files[0];
+      if (!file || (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf')) {
+        showToast('Please select a valid PDF file.', 'error');
+        return;
+      }
+      lockDoc = file;
+      lockTitle.textContent = file.name;
+      lockSub.textContent = `${formatBytes(file.size)} — Click to replace file`;
+      updateLockStatus();
+    });
+
+    lockPass.addEventListener('input', updateLockStatus);
+
+    function updateLockStatus() {
+      lockBtn.disabled = !lockDoc || lockPass.value.trim().length === 0;
+    }
+
+    lockBtn.addEventListener('click', async () => {
+      if (!lockDoc || !lockPass.value.trim()) return;
+      const password = lockPass.value.trim();
+      lockBtn.disabled = true;
+      lockBtn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:18px; height:18px;"></i><span>Encrypting PDF...</span>`;
+      lucide.createIcons();
+
+      try {
+        const buffer = await lockDoc.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+        const pdf = await loadingTask.promise;
+        const totalPages = pdf.numPages;
+
+        const { jsPDF } = window.jspdf;
+        let encryptedDoc = null;
+
+        for (let i = 1; i <= totalPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 });
+
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+          const imgUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+          const orientation = viewport.width > viewport.height ? 'landscape' : 'portrait';
+          const ptWidth = viewport.width / 2;
+          const ptHeight = viewport.height / 2;
+
+          if (i === 1) {
+            encryptedDoc = new jsPDF({
+              orientation: orientation,
+              unit: 'pt',
+              format: [ptWidth, ptHeight],
+              encryption: {
+                userPassword: password,
+                ownerPassword: password,
+                userPermissions: ['print', 'modify', 'copy', 'annot-forms']
+              }
+            });
+            encryptedDoc.addImage(imgUrl, 'JPEG', 0, 0, ptWidth, ptHeight);
+          } else {
+            encryptedDoc.addPage([ptWidth, ptHeight], orientation);
+            encryptedDoc.addImage(imgUrl, 'JPEG', 0, 0, ptWidth, ptHeight);
+          }
+        }
+
+        const outBlob = encryptedDoc.output('blob');
+        const base = lockDoc.name.replace(/\.pdf$/i, '');
+        triggerDownload(outBlob, `${base}_protected.pdf`);
+        showToast('PDF locked and encrypted!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to encrypt document. Verify the file is valid.', 'error');
+      } finally {
+        updateLockStatus();
+        lockBtn.innerHTML = `<i data-lucide="lock" style="width:18px; height:18px;"></i><span>Encrypt & Download PDF</span>`;
+        lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>
