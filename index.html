@@ -2,137 +2,451 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Tools - Free Online PDF Utilities</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Tools - Free Online PDF Utilities</title>
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 
-  <style>
-    * { box-sizing: border-box; }
+<style>
+* { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f7fb;
-      color: #202938;
-    }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f7fb;
+  color: #202938;
+}
 
-    header {
-      background: #fff;
-      padding: 22px;
-      text-align: center;
-      border-bottom: 1px solid #e5e7eb;
-    }
+header {
+  background: white;
+  border-bottom: 1px solid #e8edf3;
+  padding: 20px;
+}
 
-    main {
-      max-width: 850px;
-      margin: 45px auto;
-      padding: 20px;
-    }
+.nav {
+  max-width: 950px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-    .tools {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 22px;
-    }
+.logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+  font-weight: bold;
+}
 
-    .tool {
-      background: white;
-      padding: 28px;
-      border-radius: 14px;
-      border: 1px solid #e5e7eb;
-      text-align: center;
-    }
+.brand {
+  font-size: 19px;
+  font-weight: 750;
+}
 
-    button {
-      background: #2563eb;
-      color: white;
-      border: 0;
-      padding: 12px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+main {
+  max-width: 850px;
+  margin: 55px auto;
+  padding: 0 20px;
+}
 
-    input { margin: 15px 0; max-width: 100%; }
-  </style>
+.hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
 
-  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+.hero h1 {
+  font-size: clamp(30px, 5vw, 42px);
+  margin: 0 0 12px;
+  letter-spacing: -1.5px;
+}
+
+.hero p {
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.tool {
+  background: white;
+  border: 1px solid #e5eaf1;
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 22px;
+  box-shadow: 0 5px 20px rgba(15, 23, 42, 0.035);
+}
+
+.tool-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 8px;
+}
+
+.tool-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  background: #eff6ff;
+  border-radius: 13px;
+  color: #2563eb;
+  font-size: 23px;
+}
+
+h2 {
+  font-size: 21px;
+  margin: 0;
+}
+
+.description {
+  color: #64748b;
+  font-size: 14px;
+  margin: 5px 0 20px;
+}
+
+.dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 14px;
+  padding: 35px 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.2s;
+  background: #fafcff;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.upload-icon {
+  font-size: 34px;
+  color: #2563eb;
+  margin-bottom: 10px;
+}
+
+.dropzone strong {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.dropzone span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.file-list {
+  margin-top: 15px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 12px;
+  margin-top: 8px;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  font-size: 13px;
+  gap: 10px;
+}
+
+.file-name {
+  overflow-wrap: anywhere;
+}
+
+.file-size {
+  color: #64748b;
+  white-space: nowrap;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.primary {
+  width: 100%;
+  background: #2563eb;
+  color: white;
+  margin-top: 18px;
+}
+
+.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.status {
+  text-align: center;
+  font-size: 13px;
+  color: #2563eb;
+  margin-top: 14px;
+}
+
+.unlock {
+  opacity: 0.85;
+}
+
+.coming {
+  margin-left: auto;
+  font-size: 11px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 6px 10px;
+  border-radius: 20px;
+}
+
+.privacy {
+  text-align: center;
+  background: #ecfdf5;
+  border: 1px solid #d1fae5;
+  padding: 18px;
+  border-radius: 13px;
+  margin-top: 28px;
+  color: #166534;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+footer {
+  text-align: center;
+  padding: 25px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+@media(max-width: 600px) {
+  main { margin: 35px auto; }
+  .tool { padding: 21px; }
+  .hero { margin-bottom: 28px; }
+}
+</style>
 </head>
 
 <body>
-  <header>
-    <h1>PDF Tools</h1>
-    <p>Simple, free and private PDF utilities</p>
-  </header>
 
-  <main>
-    <div class="tools">
-      <section class="tool">
-        <h2>Merge PDF</h2>
-        <p>Combine multiple PDF files into one.</p>
-        <input id="mergeFiles" type="file" accept="application/pdf" multiple>
-        <br>
-        <button id="mergeButton" type="button">Merge PDFs</button>
-      </section>
+<header>
+  <div class="nav">
+    <div class="logo">P</div>
+    <div class="brand">PDF Tools</div>
+  </div>
+</header>
 
-      <section class="tool">
-        <h2>Unlock PDF</h2>
-        <p>Create a password-free copy of your PDF.</p>
-        <input type="file" accept="application/pdf">
-        <br>
-        <input type="password" placeholder="Enter PDF password">
-        <br>
-        <button type="button">Unlock PDF</button>
-      </section>
+<main>
+
+  <section class="hero">
+    <h1>Your PDFs. Your device.</h1>
+    <p>Simple, free and private PDF utilities.<br>
+    No uploads. No accounts. No complicated software.</p>
+  </section>
+
+  <section class="tool">
+    <div class="tool-heading">
+      <div class="tool-icon">▤</div>
+      <h2>Merge PDF</h2>
     </div>
-  </main>
 
-  <script>
-    async function mergePDFs() {
-      const input = document.getElementById("mergeFiles");
-      const files = Array.from(input.files);
+    <p class="description">
+      Combine multiple PDF files into one document.
+    </p>
 
-      if (files.length < 2) {
-        alert("Please select at least two PDF files.");
-        return;
-      }
+    <label class="dropzone" id="dropzone" for="mergeFiles">
+      <div class="upload-icon">⇧</div>
+      <strong>Choose PDF files</strong>
+      <span>Or drag and drop your files here</span>
+      <span style="display:block;margin-top:8px">
+        Select at least two PDF files
+      </span>
+    </label>
 
-      try {
-        const mergedPdf = await PDFLib.PDFDocument.create();
+    <input id="mergeFiles" type="file"
+      accept="application/pdf,.pdf" multiple>
 
-        for (const file of files) {
-          const bytes = await file.arrayBuffer();
-          const pdf = await PDFLib.PDFDocument.load(bytes);
+    <div class="file-list" id="fileList"></div>
 
-          const pages = await mergedPdf.copyPages(
-            pdf,
-            pdf.getPageIndices()
-          );
+    <button class="primary" id="mergeButton" disabled>
+      Merge PDFs
+    </button>
 
-          pages.forEach(page => mergedPdf.addPage(page));
-        }
+    <div class="status" id="status"></div>
+  </section>
 
-        const mergedBytes = await mergedPdf.save();
-        const blob = new Blob([mergedBytes], {
-          type: "application/pdf"
-        });
+  <section class="tool unlock">
+    <div class="tool-heading">
+      <div class="tool-icon">🔓</div>
+      <h2>Unlock PDF</h2>
+      <span class="coming">Coming next</span>
+    </div>
 
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
+    <p class="description">
+      Create a password-free copy using your existing PDF password.
+    </p>
+  </section>
 
-        link.href = url;
-        link.download = "merged.pdf";
-        link.click();
+  <div class="privacy">
+    🔒 <strong>Private by design</strong><br>
+    Your PDF files are processed inside your browser.
+    They are not uploaded to our server.
+  </div>
 
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+</main>
 
-      } catch (error) {
-        console.error(error);
-        alert("Could not merge PDFs. Check that they are valid and not password-protected.");
-      }
+<footer>
+  PDF Tools · Free browser-based PDF utilities
+</footer>
+
+<script>
+const input = document.getElementById("mergeFiles");
+const dropzone = document.getElementById("dropzone");
+const fileList = document.getElementById("fileList");
+const mergeButton = document.getElementById("mergeButton");
+const status = document.getElementById("status");
+
+let selectedFiles = [];
+
+function formatSize(bytes) {
+  return bytes < 1024 * 1024
+    ? (bytes / 1024).toFixed(1) + " KB"
+    : (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+function displayFiles(files) {
+  selectedFiles = Array.from(files);
+
+  fileList.innerHTML = "";
+
+  selectedFiles.forEach(file => {
+    const item = document.createElement("div");
+    item.className = "file-item";
+
+    const name = document.createElement("span");
+    name.className = "file-name";
+    name.textContent = "📄 " + file.name;
+
+    const size = document.createElement("span");
+    size.className = "file-size";
+    size.textContent = formatSize(file.size);
+
+    item.append(name, size);
+    fileList.appendChild(item);
+  });
+
+  mergeButton.disabled = selectedFiles.length < 2;
+  status.textContent = selectedFiles.length
+    ? selectedFiles.length + " PDF file(s) selected"
+    : "";
+}
+
+input.addEventListener("change", () => {
+  displayFiles(input.files);
+});
+
+dropzone.addEventListener("dragover", event => {
+  event.preventDefault();
+  dropzone.classList.add("dragover");
+});
+
+dropzone.addEventListener("dragleave", () => {
+  dropzone.classList.remove("dragover");
+});
+
+dropzone.addEventListener("drop", event => {
+  event.preventDefault();
+  dropzone.classList.remove("dragover");
+
+  const files = Array.from(event.dataTransfer.files);
+  const validFiles = files.filter(file =>
+    file.type === "application/pdf" ||
+    file.name.toLowerCase().endsWith(".pdf")
+  );
+
+  if (validFiles.length !== files.length) {
+    status.textContent = "Please select PDF files only.";
+    return;
+  }
+
+  const transfer = new DataTransfer();
+  validFiles.forEach(file => transfer.items.add(file));
+  input.files = transfer.files;
+  displayFiles(validFiles);
+});
+
+mergeButton.addEventListener("click", async () => {
+  if (selectedFiles.length < 2) return;
+
+  if (!window.PDFLib) {
+    status.textContent = "PDF library could not load. Please refresh the page.";
+    return;
+  }
+
+  mergeButton.disabled = true;
+  mergeButton.textContent = "Merging...";
+  status.textContent = "Processing your PDF files...";
+
+  try {
+    const mergedPdf = await PDFLib.PDFDocument.create();
+
+    for (const file of selectedFiles) {
+      const bytes = await file.arrayBuffer();
+
+      const pdf = await PDFLib.PDFDocument.load(bytes);
+
+      const pages = await mergedPdf.copyPages(
+        pdf,
+        pdf.getPageIndices()
+      );
+
+      pages.forEach(page => mergedPdf.addPage(page));
     }
 
-    document.getElementById("mergeButton")
-      .addEventListener("click", mergePDFs);
-  </script>
+    const mergedBytes = await mergedPdf.save();
+    const blob = new Blob([mergedBytes], {
+      type: "application/pdf"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "merged.pdf";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    status.textContent = "✓ PDF merged successfully!";
+
+  } catch (error) {
+    console.error(error);
+    status.textContent =
+      "Unable to merge. Check that your PDFs are valid and not password-protected.";
+  } finally {
+    mergeButton.disabled = selectedFiles.length < 2;
+    mergeButton.textContent = "Merge PDFs";
+  }
+});
+</script>
+
 </body>
 </html>
