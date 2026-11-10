@@ -5,30 +5,36 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF Tools - Free Online PDF Utilities</title>
+
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: #f5f7fb;
       color: #202938;
     }
+
     header {
       background: #fff;
       padding: 22px;
       text-align: center;
       border-bottom: 1px solid #e5e7eb;
     }
+
     main {
       max-width: 850px;
       margin: 45px auto;
       padding: 20px;
     }
+
     .tools {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 22px;
     }
+
     .tool {
       background: white;
       padding: 28px;
@@ -36,6 +42,7 @@
       border: 1px solid #e5e7eb;
       text-align: center;
     }
+
     button {
       background: #2563eb;
       color: white;
@@ -44,9 +51,13 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
     input { margin: 15px 0; max-width: 100%; }
   </style>
+
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 </head>
+
 <body>
   <header>
     <h1>PDF Tools</h1>
@@ -58,9 +69,9 @@
       <section class="tool">
         <h2>Merge PDF</h2>
         <p>Combine multiple PDF files into one.</p>
-        <input type="file" accept="application/pdf" multiple>
+        <input id="mergeFiles" type="file" accept="application/pdf" multiple>
         <br>
-        <button type="button">Merge PDFs</button>
+        <button id="mergeButton" type="button">Merge PDFs</button>
       </section>
 
       <section class="tool">
@@ -74,5 +85,54 @@
       </section>
     </div>
   </main>
+
+  <script>
+    async function mergePDFs() {
+      const input = document.getElementById("mergeFiles");
+      const files = Array.from(input.files);
+
+      if (files.length < 2) {
+        alert("Please select at least two PDF files.");
+        return;
+      }
+
+      try {
+        const mergedPdf = await PDFLib.PDFDocument.create();
+
+        for (const file of files) {
+          const bytes = await file.arrayBuffer();
+          const pdf = await PDFLib.PDFDocument.load(bytes);
+
+          const pages = await mergedPdf.copyPages(
+            pdf,
+            pdf.getPageIndices()
+          );
+
+          pages.forEach(page => mergedPdf.addPage(page));
+        }
+
+        const mergedBytes = await mergedPdf.save();
+        const blob = new Blob([mergedBytes], {
+          type: "application/pdf"
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "merged.pdf";
+        link.click();
+
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      } catch (error) {
+        console.error(error);
+        alert("Could not merge PDFs. Check that they are valid and not password-protected.");
+      }
+    }
+
+    document.getElementById("mergeButton")
+      .addEventListener("click", mergePDFs);
+  </script>
 </body>
 </html>
