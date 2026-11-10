@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Tools - Free Online PDF Utilities</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #202938;
+    }
+    header {
+      background: #fff;
+      padding: 22px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    main {
+      max-width: 850px;
+      margin: 45px auto;
+      padding: 20px;
+    }
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 22px;
+    }
+    .tool {
+      background: white;
+      padding: 28px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      text-align: center;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    input { margin: 15px 0; max-width: 100%; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PDF Tools</h1>
+    <p>Simple, free and private PDF utilities</p>
+  </header>
+
+  <main>
+    <div class="tools">
+      <section class="tool">
+        <h2>Merge PDF</h2>
+        <p>Combine multiple PDF files into one.</p>
+        <input type="file" accept="application/pdf" multiple>
+        <br>
+        <button type="button">Merge PDFs</button>
+      </section>
+
+      <section class="tool">
+        <h2>Unlock PDF</h2>
+        <p>Create a password-free copy of your PDF.</p>
+        <input type="file" accept="application/pdf">
+        <br>
+        <input type="password" placeholder="Enter PDF password">
+        <br>
+        <button type="button">Unlock PDF</button>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
