@@ -650,4 +650,461 @@
 
       <label class="dropzone" id="lockDropzone" for="lockFileInput">
         <div class="dropzone-icon">
-          <i data-lucide
+          <i data-lucide="file-lock-2" style="width:24px; height:24px;"></i>
+        </div>
+        <div class="dropzone-text">
+          <strong id="lockDropTitle">Click to choose a PDF to lock</strong>
+          <span id="lockDropSub">Select or drag & drop your PDF file</span>
+        </div>
+      </label>
+      <input id="lockFileInput" type="file" accept="application/pdf,.pdf">
+
+      <div class="input-group">
+        <label class="input-label" for="lockPassword">Set Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="lockPassword" class="input-text" placeholder="Enter password to protect document..." autocomplete="off">
+          <button class="toggle-pass-btn" type="button" onclick="togglePasswordVisibility('lockPassword', 'lockPassToggleIcon')">
+            <i data-lucide="eye" id="lockPassToggleIcon" style="width:18px; height:18px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="lockBtn" disabled onclick="executeLock()">
+        <i data-lucide="lock" style="width:18px; height:18px;"></i>
+        <span>Encrypt & Download PDF</span>
+      </button>
+    </div>
+
+    <!-- Privacy Card -->
+    <div class="privacy-box">
+      <div class="privacy-box-icon">
+        <i data-lucide="shield-check" style="width:20px; height:20px;"></i>
+      </div>
+      <div>
+        <strong>100% Private & Safe:</strong> All file parsing, password decryption, encryption, and PDF merging happen right in your browser's local memory via WebAssembly and JavaScript. No servers, no tracking, and no data stored.
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    PDF Tools &bull; Purely client-side PDF utilities
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Tab Navigation
+    function switchTab(tab) {
+      const sections = {
+        merge: document.getElementById('mergeSection'),
+        unlock: document.getElementById('unlockSection'),
+        lock: document.getElementById('lockSection')
+      };
+      const buttons = {
+        merge: document.getElementById('tabMerge'),
+        unlock: document.getElementById('tabUnlock'),
+        lock: document.getElementById('tabLock')
+      };
+
+      Object.keys(sections).forEach(key => {
+        if (key === tab) {
+          sections[key].style.display = 'block';
+          buttons[key].classList.add('active');
+        } else {
+          sections[key].style.display = 'none';
+          buttons[key].classList.remove('active');
+        }
+      });
+    }
+
+    // Helper: Toast Notifications
+    let toastTimeout;
+    function showToast(message, type = 'normal') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show ${type}`;
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.className = 'toast';
+      }, 3500);
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+      else return (bytes / 1048576).toFixed(2) + " MB";
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      const isPass = input.type === 'password';
+      input.type = isPass ? 'text' : 'password';
+      icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+      lucide.createIcons();
+    }
+
+    /* ========================================================
+       MERGE LOGIC
+    ======================================================== */
+    let mergeFiles = [];
+    const mergeInput = document.getElementById('mergeFileInput');
+    const mergeDropzone = document.getElementById('mergeDropzone');
+    const mergeFileList = document.getElementById('mergeFileList');
+    const mergeBtn = document.getElementById('mergeBtn');
+
+    mergeInput.addEventListener('change', () => {
+      handleMergeFiles(Array.from(mergeInput.files));
+      mergeInput.value = '';
+    });
+
+    setupDragDrop(mergeDropzone, (files) => handleMergeFiles(files));
+
+    function handleMergeFiles(incomingFiles) {
+      const valid = incomingFiles.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+      if (valid.length !== incomingFiles.length) {
+        showToast('Ignored non-PDF files', 'error');
+      }
+      mergeFiles = mergeFiles.concat(valid);
+      renderMergeList();
+    }
+
+    function renderMergeList() {
+      mergeFileList.innerHTML = '';
+      mergeFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.draggable = true;
+        item.innerHTML = `
+          <div class="file-info">
+            <i data-lucide="grip-vertical" style="width:16px; height:16px; color:#94a3b8; cursor:grab;"></i>
+            <span class="file-name" title="${file.name}">\${file.name}</span>
+            <span class="file-size">\${formatBytes(file.size)}</span>
+          </div>
+          <div class="file-actions">
+            <button class="icon-btn" onclick="moveItem(\${index}, -1)" title="Move Up" \${index === 0 ? 'disabled style="opacity:0.3"' : ''}>
+              <i data-lucide="chevron-up" style="width:16px; height:16px;"></i>
+            </button>
+            <button class="icon-btn" onclick="moveItem(\${index}, 1)" title="Move Down" \${index === mergeFiles.length - 1 ? 'disabled style="opacity:0.3"' : ''}>
+              <i data-lucide="chevron-down" style="width:16px; height:16px;"></i>
+            </button>
+            <button class="icon-btn delete" onclick="removeFile(\${index})" title="Remove">
+              <i data-lucide="trash-2" style="width:16px; height:16px;"></i>
+            </button>
+          </div>
+        `;
+
+        item.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', index);
+          item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+        item.addEventListener('dragover', (e) => e.preventDefault());
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+          const toIndex = index;
+          if (fromIndex !== toIndex) {
+            const moved = mergeFiles.splice(fromIndex, 1)[0];
+            mergeFiles.splice(toIndex, 0, moved);
+            renderMergeList();
+          }
+        });
+
+        mergeFileList.appendChild(item);
+      });
+
+      mergeBtn.disabled = mergeFiles.length < 2;
+      lucide.createIcons();
+    }
+
+    function moveItem(index, direction) {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= mergeFiles.length) return;
+      const temp = mergeFiles[index];
+      mergeFiles[index] = mergeFiles[targetIndex];
+      mergeFiles[targetIndex] = temp;
+      renderMergeList();
+    }
+
+    function removeFile(index) {
+      mergeFiles.splice(index, 1);
+      renderMergeList();
+    }
+
+    async function executeMerge() {
+      if (mergeFiles.length < 2) return;
+      mergeBtn.disabled = true;
+      mergeBtn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:18px; height:18px;"></i> Merging PDFs...`;
+      lucide.createIcons();
+
+      try {
+        const mergedPdf = await PDFLib.PDFDocument.create();
+
+        for (const file of mergeFiles) {
+          const buffer = await file.arrayBuffer();
+          const pdfDoc = await PDFLib.PDFDocument.load(buffer, { ignoreEncryption: true });
+          const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+          copiedPages.forEach(p => mergedPdf.addPage(p));
+        }
+
+        const mergedBytes = await mergedPdf.save();
+        triggerDownload(mergedBytes, 'merged.pdf');
+        showToast('Merged successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Error merging files. Ensure files are not corrupted or encrypted.', 'error');
+      } finally {
+        mergeBtn.disabled = mergeFiles.length < 2;
+        mergeBtn.innerHTML = `<i data-lucide="combine" style="width:18px; height:18px;"></i><span>Merge & Download</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    /* ========================================================
+       UNLOCK LOGIC (Decrypt & Remove Password)
+    ======================================================== */
+    let unlockFile = null;
+    const unlockInput = document.getElementById('unlockFileInput');
+    const unlockDropzone = document.getElementById('unlockDropzone');
+    const unlockDropTitle = document.getElementById('unlockDropTitle');
+    const unlockDropSub = document.getElementById('unlockDropSub');
+    const pdfPasswordInput = document.getElementById('pdfPassword');
+    const unlockBtn = document.getElementById('unlockBtn');
+
+    unlockInput.addEventListener('change', () => {
+      if (unlockInput.files.length > 0) {
+        setUnlockFile(unlockInput.files[0]);
+      }
+    });
+
+    setupDragDrop(unlockDropzone, (files) => {
+      if (files.length > 0) setUnlockFile(files[0]);
+    });
+
+    pdfPasswordInput.addEventListener('input', () => {
+      unlockBtn.disabled = !unlockFile;
+    });
+
+    function setUnlockFile(file) {
+      if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+        showToast('Please select a valid PDF file.', 'error');
+        return;
+      }
+      unlockFile = file;
+      unlockDropTitle.textContent = file.name;
+      unlockDropSub.textContent = formatBytes(file.size) + " - Click to change file";
+      unlockBtn.disabled = false;
+    }
+
+    async function executeUnlock() {
+      if (!unlockFile) return;
+
+      const password = pdfPasswordInput.value;
+      unlockBtn.disabled = true;
+      unlockBtn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:18px; height:18px;"></i> Unlocking...`;
+      lucide.createIcons();
+
+      try {
+        const fileBuffer = await unlockFile.arrayBuffer();
+
+        const loadingTask = pdfjsLib.getDocument({
+          data: new Uint8Array(fileBuffer),
+          password: password
+        });
+
+        const pdfDoc = await loadingTask.promise;
+        const numPages = pdfDoc.numPages;
+
+        const newPdfDoc = await PDFLib.PDFDocument.create();
+
+        for (let i = 1; i <= numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 });
+
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+          const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+          const embeddedImage = await newPdfDoc.embedJpg(imgDataUrl);
+
+          const pdfPage = newPdfDoc.addPage([viewport.width / 2, viewport.height / 2]);
+          pdfPage.drawImage(embeddedImage, {
+            x: 0,
+            y: 0,
+            width: viewport.width / 2,
+            height: viewport.height / 2
+          });
+        }
+
+        const unlockedBytes = await newPdfDoc.save();
+        const baseName = unlockFile.name.replace(/\.pdf$/i, '');
+        triggerDownload(unlockedBytes, `${baseName}_unlocked.pdf`);
+        showToast('Password removed successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        if (err.name === 'PasswordException') {
+          showToast('Incorrect password. Please try again.', 'error');
+        } else {
+          showToast('Failed to unlock document. Please check the password.', 'error');
+        }
+      } finally {
+        unlockBtn.disabled = !unlockFile;
+        unlockBtn.innerHTML = `<i data-lucide="lock-open" style="width:18px; height:18px;"></i><span>Decrypt & Save PDF</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    /* ========================================================
+       LOCK LOGIC (Encrypt & Password-Protect)
+    ======================================================== */
+    let lockFile = null;
+    const lockInput = document.getElementById('lockFileInput');
+    const lockDropzone = document.getElementById('lockDropzone');
+    const lockDropTitle = document.getElementById('lockDropTitle');
+    const lockDropSub = document.getElementById('lockDropSub');
+    const lockPasswordInput = document.getElementById('lockPassword');
+    const lockBtn = document.getElementById('lockBtn');
+
+    lockInput.addEventListener('change', () => {
+      if (lockInput.files.length > 0) {
+        setLockFile(lockInput.files[0]);
+      }
+    });
+
+    setupDragDrop(lockDropzone, (files) => {
+      if (files.length > 0) setLockFile(files[0]);
+    });
+
+    lockPasswordInput.addEventListener('input', () => {
+      updateLockBtnState();
+    });
+
+    function setLockFile(file) {
+      if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+        showToast('Please select a valid PDF file.', 'error');
+        return;
+      }
+      lockFile = file;
+      lockDropTitle.textContent = file.name;
+      lockDropSub.textContent = formatBytes(file.size) + " - Click to change file";
+      updateLockBtnState();
+    }
+
+    function updateLockBtnState() {
+      lockBtn.disabled = !lockFile || lockPasswordInput.value.length === 0;
+    }
+
+    async function executeLock() {
+      if (!lockFile || !lockPasswordInput.value) return;
+
+      const password = lockPasswordInput.value;
+      lockBtn.disabled = true;
+      lockBtn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:18px; height:18px;"></i> Encrypting...`;
+      lucide.createIcons();
+
+      try {
+        const fileBuffer = await lockFile.arrayBuffer();
+
+        // 1. Render pages with PDF.js
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(fileBuffer) });
+        const pdfDoc = await loadingTask.promise;
+        const numPages = pdfDoc.numPages;
+
+        // 2. Build password-encrypted PDF via jsPDF
+        const { jsPDF } = window.jspdf;
+        let encryptedPdf = null;
+
+        for (let i = 1; i <= numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 });
+
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+          const imgDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+          const orientation = viewport.width > viewport.height ? 'landscape' : 'portrait';
+          const ptWidth = viewport.width / 2;
+          const ptHeight = viewport.height / 2;
+
+          if (i === 1) {
+            encryptedPdf = new jsPDF({
+              orientation: orientation,
+              unit: 'pt',
+              format: [ptWidth, ptHeight],
+              encryption: {
+                userPassword: password,
+                ownerPassword: password,
+                userPermissions: ['print', 'modify', 'copy', 'annot-forms']
+              }
+            });
+            encryptedPdf.addImage(imgDataUrl, 'JPEG', 0, 0, ptWidth, ptHeight);
+          } else {
+            encryptedPdf.addPage([ptWidth, ptHeight], orientation);
+            encryptedPdf.addImage(imgDataUrl, 'JPEG', 0, 0, ptWidth, ptHeight);
+          }
+        }
+
+        const outBlob = encryptedPdf.output('blob');
+        const baseName = lockFile.name.replace(/\.pdf$/i, '');
+        triggerDownload(outBlob, `${baseName}_protected.pdf`);
+        showToast('PDF encrypted & locked successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to protect document. Verify the file is valid.', 'error');
+      } finally {
+        updateLockBtnState();
+        lockBtn.innerHTML = `<i data-lucide="lock" style="width:18px; height:18px;"></i><span>Encrypt & Download PDF</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    /* Helper: Drag and Drop */
+    function setupDragDrop(zone, onFiles) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        zone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.add('dragover');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.remove('dragover');
+        });
+      });
+
+      zone.addEventListener('drop', (e) => {
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) onFiles(files);
+      });
+    }
+
+    function triggerDownload(data, filename) {
+      const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  </script>
+</body>
+</html>
